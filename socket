@@ -1,0 +1,91 @@
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+
+public class StringInfo implements Serializable {
+    private Map<Character, Integer> charCounts;
+
+    public StringInfo() {
+        charCounts = new HashMap<>();
+    }
+
+    public void countCharacters(String input) {
+        charCounts.clear();
+        for (char c : input.toCharArray()) {
+            if (Character.isLetter(c)) {
+                char ch = Character.toLowerCase(c); // Normalize to lowercase
+                charCounts.put(ch, charCounts.getOrDefault(ch, 0) + 1);
+            }
+        }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder result = new StringBuilder();
+        for (Map.Entry<Character, Integer> entry : charCounts.entrySet()) {
+            result.append(entry.getKey()).append(":").append(entry.getValue()).append(" , ");
+        }
+        return result.toString().replaceAll(", $", "");
+    }
+}
+import java.io.*;
+import java.net.*;
+
+public class Server {
+    public static void main(String[] args) {
+        int port = 12345;
+
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+            System.out.println("Server is listening on port " + port);
+
+            while (true) {
+                Socket clientSocket = serverSocket.accept();
+                System.out.println("Client connected: " + clientSocket);
+
+                // Create input and output streams for communication
+                ObjectInputStream objectInput = new ObjectInputStream(clientSocket.getInputStream());
+                ObjectOutputStream objectOutput = new ObjectOutputStream(clientSocket.getOutputStream());
+
+                String clientMessage = (String) objectInput.readObject();
+
+                StringInfo stringInfo = new StringInfo();
+                stringInfo.countCharacters(clientMessage);
+
+                objectOutput.writeObject(stringInfo);
+
+                clientSocket.close();
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+}
+import java.io.*;
+import java.net.*;
+
+public class Client {
+    public static void main(String[] args) {
+        String serverAddress = "localhost";
+        int serverPort = 12345;
+
+        try (Socket socket = new Socket(serverAddress, serverPort);
+             ObjectOutputStream objectOutput = new ObjectOutputStream(socket.getOutputStream());
+             ObjectInputStream objectInput = new ObjectInputStream(socket.getInputStream());
+             BufferedReader userInput = new BufferedReader(new InputStreamReader(System.in)) ) {
+
+            System.out.print("Enter a string: ");
+            String clientMessage = userInput.readLine();
+
+            objectOutput.writeObject(clientMessage);
+
+            StringInfo serverResponse = (StringInfo) objectInput.readObject();
+            System.out.println("Server Response: " + serverResponse);
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+               
+        
+             
